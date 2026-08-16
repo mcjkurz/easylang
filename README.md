@@ -13,6 +13,15 @@ EasyLang is a small **Flask** web app: a Python backend (`app.py`) talks to any 
 
 ## Setup
 
+Open a terminal, clone the repo, and enter the project folder:
+
+```bash
+git clone https://github.com/mcjkurz/easylang.git
+cd easylang
+```
+
+Then create a virtual environment and install dependencies:
+
 ```bash
 python3 -m venv venv
 source venv/bin/activate
@@ -20,7 +29,7 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Edit `.env` with any OpenAI-compatible endpoint and models:
+Edit `.env` with your API credentials and models:
 
 ```
 API_KEY=your_api_key_here
