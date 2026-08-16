@@ -17,17 +17,19 @@ const modelSelect = document.getElementById('modelSelect');
 
 const DEFAULT_LANGUAGES = ["Chinese", "English", "French", "German", "Polish", "Russian"];
 const DEFAULT_MODELS = [
-    'GPT-5.4-Nano',
-    'Gemini-3.5-Flash-Lite',
     'Claude-Haiku-4.5',
-    'GPT-5.6-Luna',
-    'GPT-5.4-Mini',
-    'GPT-5.6-Terra',
-    'Claude-Sonnet-5',
-    'Gemini-3.7-Flash',
-    'Grok-4.6',
-    'GPT-5.6-Sol',
     'Claude-Opus-5',
+    'Claude-Sonnet-5',
+    'DeepSeek-V4-Flash',
+    'DeepSeek-V4-Pro',
+    'Gemini-3.5-Flash-Lite',
+    'Gemini-3.7-Flash',
+    'GPT-5.4-Mini',
+    'GPT-5.4-Nano',
+    'GPT-5.6-Luna',
+    'GPT-5.6-Sol',
+    'GPT-5.6-Terra',
+    'Grok-4.6',
 ];
 const DEFAULT_MODEL = 'GPT-5.4-Mini';
 const STORAGE_KEY = 'easylang_languages';
@@ -47,9 +49,12 @@ function saveModel(model) {
 }
 
 function populateModelSelect(models, defaultModel) {
+    const sorted = [...new Set(models)].sort((a, b) =>
+        a.localeCompare(b, undefined, { sensitivity: 'base' })
+    );
     const saved = getStoredModel();
-    const selected = models.includes(saved) ? saved : defaultModel;
-    modelSelect.innerHTML = models.map(m =>
+    const selected = sorted.includes(saved) ? saved : defaultModel;
+    modelSelect.innerHTML = sorted.map(m =>
         `<option value="${escapeHtml(m)}"${m === selected ? ' selected' : ''}>${escapeHtml(m)}</option>`
     ).join('');
     if (selected !== saved) {

@@ -64,17 +64,19 @@ def append_log(kind, fields, response_text=None, error=None):
 DEFAULT_LANGUAGES = ["Chinese", "English", "French", "German", "Polish", "Russian"]
 
 _FALLBACK_MODELS = [
-    "GPT-5.4-Nano",
-    "Gemini-3.5-Flash-Lite",
     "Claude-Haiku-4.5",
-    "GPT-5.6-Luna",
-    "GPT-5.4-Mini",
-    "GPT-5.6-Terra",
-    "Claude-Sonnet-5",
-    "Gemini-3.7-Flash",
-    "Grok-4.6",
-    "GPT-5.6-Sol",
     "Claude-Opus-5",
+    "Claude-Sonnet-5",
+    "DeepSeek-V4-Flash",
+    "DeepSeek-V4-Pro",
+    "Gemini-3.5-Flash-Lite",
+    "Gemini-3.7-Flash",
+    "GPT-5.4-Mini",
+    "GPT-5.4-Nano",
+    "GPT-5.6-Luna",
+    "GPT-5.6-Sol",
+    "GPT-5.6-Terra",
+    "Grok-4.6",
 ]
 
 
@@ -83,6 +85,8 @@ def _load_models_from_env():
     models = [m.strip() for m in raw.split(",") if m.strip()]
     if not models:
         models = list(_FALLBACK_MODELS)
+    # Stable A–Z order for the Settings dropdown
+    models = sorted(dict.fromkeys(models), key=str.casefold)
     default = (os.environ.get("API_DEFAULT_MODEL") or "").strip()
     if not default or default not in models:
         default = models[0]
