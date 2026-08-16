@@ -193,18 +193,18 @@ def explain_sentence():
     if not sentence or not sentence_language:
         return jsonify({"error": "Missing sentence or language"}), 400
 
-    prompt = f"""Explain the grammar of this {sentence_language} sentence for a language learner.
-Write the entire explanation in {explain_in}.
+    prompt = f"""Analyze this {sentence_language} sentence for a language learner.
+Write the entire analysis in {explain_in}.
 
 Sentence:
 \"\"\"{sentence}\"\"\"
 
-Keep it neat and simple:
-- Brief overall meaning (one short line)
-- Break down the key grammar (tense, cases, particles, word order, agreement, etc. as relevant)
-- Mention 1–3 notable words/forms if helpful
+Include all of the following:
+1. Overall meaning — one clear line translating / paraphrasing the whole sentence.
+2. Word glosses — go through the important words and forms in order; for each, give the word/form and its meaning in {explain_in} (include particles, endings, and multi-word phrases when they matter). Do not skip content words.
+3. Grammar notes — brief notes on tense, cases, particles, word order, agreement, or other structures that help the learner.
 
-Do not translate word-by-word unless needed for grammar. No phonetics. 1 short paragraph or a few short bullets max."""
+Keep it neat and readable (short bullets are fine). No phonetics or pronunciation guides."""
 
     log_fields = {
         "model": model,
