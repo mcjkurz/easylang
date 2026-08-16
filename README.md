@@ -2,6 +2,13 @@
 
 Learn words, phrases, and answers across multiple languages.
 
+<p>
+  <img src="docs/home.png" alt="EasyLang home — enter a phrase, pick languages, and learn" width="520" />
+</p>
+<p>
+  <img src="docs/results.png" alt="EasyLang results — same sentence across languages by difficulty" width="520" />
+</p>
+
 ## Setup
 
 ```bash
