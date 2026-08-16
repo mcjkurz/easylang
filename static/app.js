@@ -18,18 +18,17 @@ const modelSelect = document.getElementById('modelSelect');
 const DEFAULT_LANGUAGES = ["Chinese", "English", "French", "German", "Polish", "Russian"];
 const DEFAULT_MODELS = [
     'Claude-Haiku-4.5',
-    'Claude-Opus-5',
-    'Claude-Sonnet-5',
-    'DeepSeek-V4-Flash',
-    'DeepSeek-V4-Pro',
+    'Claude-Opus-4.8',
+    'Claude-Sonnet-4.6',
+    'Gemini-3.1-Flash-Lite',
     'Gemini-3.5-Flash-Lite',
     'Gemini-3.7-Flash',
+    'GPT-5.4',
     'GPT-5.4-Mini',
     'GPT-5.4-Nano',
-    'GPT-5.6-Luna',
-    'GPT-5.6-Sol',
-    'GPT-5.6-Terra',
+    'Grok-4.1-Fast-Reasoning',
     'Grok-4.6',
+    'MiMo-V2-Flash',
 ];
 const DEFAULT_MODEL = 'GPT-5.4-Mini';
 const STORAGE_KEY = 'easylang_languages';

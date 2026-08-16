@@ -4,6 +4,8 @@ from flask import Flask, render_template, request, jsonify
 from openai import OpenAI
 from dotenv import load_dotenv
 
+import prompts
+
 load_dotenv()
 
 app = Flask(__name__)
@@ -65,18 +67,17 @@ DEFAULT_LANGUAGES = ["Chinese", "English", "French", "German", "Polish", "Russia
 
 _FALLBACK_MODELS = [
     "Claude-Haiku-4.5",
-    "Claude-Opus-5",
-    "Claude-Sonnet-5",
-    "DeepSeek-V4-Flash",
-    "DeepSeek-V4-Pro",
+    "Claude-Opus-4.8",
+    "Claude-Sonnet-4.6",
+    "Gemini-3.1-Flash-Lite",
     "Gemini-3.5-Flash-Lite",
     "Gemini-3.7-Flash",
+    "GPT-5.4",
     "GPT-5.4-Mini",
     "GPT-5.4-Nano",
-    "GPT-5.6-Luna",
-    "GPT-5.6-Sol",
-    "GPT-5.6-Terra",
+    "Grok-4.1-Fast-Reasoning",
     "Grok-4.6",
+    "MiMo-V2-Flash",
 ]
 
 
@@ -141,30 +142,15 @@ def search():
         format_example_lines.append("")
     format_example = "\n".join(format_example_lines).strip()
 
-    prompt = f"""{source_info}The user wrote:
-
-\"\"\"{phrase}\"\"\"
-
-Decide what they want:
-- If it is a word or short phrase: create natural example USAGE sentences that include/use that word or phrase.
-- If it is a question: ANSWER the question (do not invent unrelated example sentences).
-- If it is a short passage or request: respond with useful learner-facing content that fits the request (answer, paraphrase, or explanation as appropriate).
-
-Then produce exactly {num_examples} versions of that content, one per difficulty level: {levels_list}.
-Difficulty means language complexity for learners (vocabulary, grammar, sentence length) — NOT different topics.
-Within each difficulty level, give the SAME meaning translated into EVERY one of these languages: {lang_list}.
-Do NOT group by language. Do NOT give different sentences per language.
-
-Rules:
-1. Exactly {num_examples} difficulty blocks, in this order: {levels_list}.
-2. Each block contains exactly one line per language listed above, using those exact language names.
-3. Lines inside a block are translations of each other (same meaning).
-4. Later levels may be richer/more nuanced, but must stay on the same core meaning or answer.
-5. Output ONLY the formatted blocks — no intro, no outro, no commentary.
-
-Format exactly like this:
-
-{format_example}"""
+    prompt = prompts.render(
+        "search",
+        source_info=source_info,
+        phrase=phrase,
+        num_examples=num_examples,
+        levels_list=levels_list,
+        lang_list=lang_list,
+        format_example=format_example,
+    )
 
     log_fields = {
         "model": model,
@@ -197,18 +183,12 @@ def explain_sentence():
     if not sentence or not sentence_language:
         return jsonify({"error": "Missing sentence or language"}), 400
 
-    prompt = f"""Analyze this {sentence_language} sentence for a language learner.
-Write the entire analysis in {explain_in}.
-
-Sentence:
-\"\"\"{sentence}\"\"\"
-
-Include all of the following:
-1. Overall meaning — one clear line translating / paraphrasing the whole sentence.
-2. Word glosses — go through the important words and forms in order; for each, give the word/form and its meaning in {explain_in} (include particles, endings, and multi-word phrases when they matter). Do not skip content words.
-3. Grammar notes — brief notes on tense, cases, particles, word order, agreement, or other structures that help the learner.
-
-Keep it neat and readable (short bullets are fine). No phonetics or pronunciation guides."""
+    prompt = prompts.render(
+        "explain",
+        sentence_language=sentence_language,
+        explain_in=explain_in,
+        sentence=sentence,
+    )
 
     log_fields = {
         "model": model,

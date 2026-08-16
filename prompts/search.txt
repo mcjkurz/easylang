@@ -1,0 +1,24 @@
+{source_info}The user wrote:
+
+"""{phrase}"""
+
+Decide what they want:
+- If it is a word or short phrase: create natural example USAGE sentences that include/use that word or phrase.
+- If it is a question: ANSWER the question (do not invent unrelated example sentences).
+- If it is a short passage or request: respond with useful learner-facing content that fits the request (answer, paraphrase, or explanation as appropriate).
+
+Then produce exactly {num_examples} versions of that content, one per difficulty level: {levels_list}.
+Difficulty means language complexity for learners (vocabulary, grammar, sentence length) — NOT different topics.
+Within each difficulty level, give the SAME meaning translated into EVERY one of these languages: {lang_list}.
+Do NOT group by language. Do NOT give different sentences per language.
+
+Rules:
+1. Exactly {num_examples} difficulty blocks, in this order: {levels_list}.
+2. Each block contains exactly one line per language listed above, using those exact language names.
+3. Lines inside a block are translations of each other (same meaning).
+4. Later levels may be richer/more nuanced, but must stay on the same core meaning or answer.
+5. Output ONLY the formatted blocks — no intro, no outro, no commentary.
+
+Format exactly like this:
+
+{format_example}

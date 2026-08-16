@@ -1,0 +1,12 @@
+Analyze this {sentence_language} sentence for a language learner.
+Write the entire analysis in {explain_in}.
+
+Sentence:
+"""{sentence}"""
+
+Include all of the following:
+1. Overall meaning — one clear line translating / paraphrasing the whole sentence.
+2. Word glosses — go through the important words and forms in order; for each, give the word/form and its meaning in {explain_in} (include particles, endings, and multi-word phrases when they matter). Do not skip content words.
+3. Grammar notes — brief notes on tense, cases, particles, word order, agreement, or other structures that help the learner.
+
+Keep it neat and readable (short bullets are fine). No phonetics or pronunciation guides.
