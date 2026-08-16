@@ -1,0 +1,22 @@
+# Secrets
+.env
+.env.local
+
+# Python
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.Python
+.pytest_cache/
+
+# App logs
+logs/
+*.log
+easylang.log
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp

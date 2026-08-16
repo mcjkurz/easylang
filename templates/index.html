@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EasyLang - Learn Words in Multiple Languages</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="top-bar">
+        <button type="button" class="settings-btn" id="savedBtn" aria-expanded="false" aria-controls="savedPanel">
+            Saved <span class="badge" id="savedCount" hidden>0</span>
+        </button>
+        <button type="button" class="settings-btn" id="settingsBtn" aria-expanded="false" aria-controls="settingsPanel">Settings</button>
+    </div>
+
+    <div class="settings-panel" id="settingsPanel" hidden>
+        <div class="settings-panel-inner">
+            <div class="option-group">
+                <label for="modelSelect">Model</label>
+                <select class="examples-select" id="modelSelect"></select>
+            </div>
+            <p class="settings-hint">Saved in this browser. Used for Learn requests.</p>
+        </div>
+    </div>
+
+    <div class="settings-panel" id="savedPanel" hidden>
+        <div class="settings-panel-inner">
+            <div class="saved-header">
+                <h2>Saved for revision</h2>
+                <button type="button" class="text-btn" id="clearSavedBtn" hidden>Clear all</button>
+            </div>
+            <p class="settings-hint" id="savedEmpty">No saved sentences yet. Use the bookmark icon on any result to save it.</p>
+            <div class="saved-list" id="savedList"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="logo">
+            <h1>EasyLang</h1>
+            <p>Learn words, phrases, and answers across languages</p>
+        </div>
+
+        <div class="search-box">
+            <div class="search-input-wrapper">
+                <textarea class="search-input search-textarea" id="phraseInput" rows="4" placeholder="Enter a word, phrase, short passage, or question..." autofocus></textarea>
+            </div>
+
+            <div class="options-row">
+                <div class="option-group">
+                    <label>Source language</label>
+                    <select class="examples-select" id="sourceLanguage">
+                        <option value="">Auto-detect</option>
+                        <option value="English" selected>English</option>
+                        <option value="Chinese">Chinese</option>
+                        <option value="French">French</option>
+                        <option value="German">German</option>
+                        <option value="Polish">Polish</option>
+                        <option value="Russian">Russian</option>
+                        <option value="Spanish">Spanish</option>
+                    </select>
+                </div>
+                <div class="option-group">
+                    <label>Difficulty levels</label>
+                    <select class="examples-select" id="numExamples">
+                        <option value="3">3 (Easy → Hard)</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="option-group" style="margin-bottom: 24px;">
+                <label>Languages</label>
+                <div class="languages-grid" id="languagesGrid">
+                    <!-- Languages rendered by JS -->
+                </div>
+            </div>
+
+            <button class="search-btn" id="searchBtn">Learn</button>
+        </div>
+
+        <div class="results" id="results">
+            <div class="results-content" id="resultsContent"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="explainModal" hidden>
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="explainModalTitle">
+            <div class="modal-header">
+                <h3 id="explainModalTitle">Grammar</h3>
+                <button type="button" class="modal-close" id="explainModalClose" aria-label="Close">×</button>
+            </div>
+            <p class="modal-sentence" id="explainModalSentence"></p>
+            <div class="modal-body" id="explainModalBody"></div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
