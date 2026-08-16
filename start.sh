@@ -15,7 +15,7 @@ else
     exit 1
 fi
 
-if [ -z "${API_KEY:-}${POE_API_KEY:-}" ]; then
+if [ -z "${API_KEY:-}" ]; then
     echo "API_KEY is not set in .env"
     exit 1
 fi

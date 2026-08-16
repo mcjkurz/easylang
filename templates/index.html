@@ -7,6 +7,19 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
+    <div class="auth-gate" id="authGate" hidden>
+        <div class="auth-card">
+            <h2>EasyLang</h2>
+            <p>Enter the password to continue.</p>
+            <form id="authForm">
+                <input type="password" id="authPassword" class="search-input" placeholder="Password" autocomplete="current-password" required>
+                <p class="auth-error" id="authError" hidden></p>
+                <button type="submit" class="search-btn" id="authSubmit">Unlock</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="appShell">
     <div class="top-bar">
         <button type="button" class="settings-btn" id="savedBtn" aria-expanded="false" aria-controls="savedPanel">
             Saved <span class="badge" id="savedCount" hidden>0</span>
@@ -20,7 +33,7 @@
                 <label for="modelSelect">Model</label>
                 <select class="examples-select" id="modelSelect"></select>
             </div>
-            <p class="settings-hint">Saved in this browser. Used for Learn requests.</p>
+            <p class="settings-hint">Saved in this browser.</p>
         </div>
     </div>
 
@@ -73,7 +86,7 @@
             </div>
 
             <div class="option-group" style="margin-bottom: 24px;">
-                <label>Languages</label>
+                <label>Languages <span class="label-hint">(drag to reorder)</span></label>
                 <div class="languages-grid" id="languagesGrid">
                     <!-- Languages rendered by JS -->
                 </div>
@@ -96,6 +109,8 @@
             <p class="modal-sentence" id="explainModalSentence"></p>
             <div class="modal-body" id="explainModalBody"></div>
         </div>
+    </div>
+
     </div>
 
     <script src="/static/app.js"></script>

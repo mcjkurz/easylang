@@ -1,6 +1,7 @@
 import os
+import secrets
 from datetime import datetime
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session
 from openai import OpenAI
 from dotenv import load_dotenv
 
@@ -10,10 +11,20 @@ load_dotenv()
 
 app = Flask(__name__)
 
-# OpenAI-compatible API (any provider: Poe, OpenAI, local proxy, etc.)
+APP_PASSWORD = (os.environ.get("PASSWORD") or "").strip()
+# Prefer explicit SECRET_KEY; otherwise derive a stable key from PASSWORD so
+# sessions survive restarts when a password is set.
+if os.environ.get("SECRET_KEY"):
+    app.secret_key = os.environ["SECRET_KEY"]
+elif APP_PASSWORD:
+    app.secret_key = "easylang:" + APP_PASSWORD
+else:
+    app.secret_key = secrets.token_hex(16)
+
+# OpenAI-compatible API (any provider)
 client = OpenAI(
-    api_key=os.environ.get("API_KEY") or os.environ.get("POE_API_KEY"),
-    base_url=os.environ.get("API_BASE_URL") or os.environ.get("OPENAI_BASE_URL") or "https://api.openai.com/v1",
+    api_key=os.environ.get("API_KEY"),
+    base_url=os.environ.get("API_BASE_URL") or "https://api.openai.com/v1",
 )
 
 LOG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
@@ -65,29 +76,14 @@ def append_log(kind, fields, response_text=None, error=None):
 
 DEFAULT_LANGUAGES = ["Chinese", "English", "French", "German", "Polish", "Russian"]
 
-_FALLBACK_MODELS = [
-    "Claude-Haiku-4.5",
-    "Claude-Opus-4.8",
-    "Claude-Sonnet-4.6",
-    "Gemini-3.1-Flash-Lite",
-    "Gemini-3.5-Flash-Lite",
-    "Gemini-3.7-Flash",
-    "GPT-5.4",
-    "GPT-5.4-Mini",
-    "GPT-5.4-Nano",
-    "Grok-4.1-Fast-Reasoning",
-    "Grok-4.6",
-    "MiMo-V2-Flash",
-]
-
 
 def _load_models_from_env():
     raw = os.environ.get("API_MODELS", "")
     models = [m.strip() for m in raw.split(",") if m.strip()]
-    if not models:
-        models = list(_FALLBACK_MODELS)
-    # Stable A–Z order for the Settings dropdown
+    # Deduplicate, preserve first occurrence, then sort A–Z for Settings
     models = sorted(dict.fromkeys(models), key=str.casefold)
+    if not models:
+        models = ["GPT-5.4-Mini"]
     default = (os.environ.get("API_DEFAULT_MODEL") or "").strip()
     if not default or default not in models:
         default = models[0]
@@ -103,9 +99,54 @@ def _resolve_model(requested):
         return requested
     return DEFAULT_MODEL
 
+
+def password_required():
+    return bool(APP_PASSWORD)
+
+
+def is_authenticated():
+    if not password_required():
+        return True
+    return session.get("authenticated") is True
+
+
+@app.before_request
+def require_password():
+    if request.endpoint in (None, "index", "static", "auth_status", "auth_login"):
+        return None
+    if request.path.startswith("/static/"):
+        return None
+    if is_authenticated():
+        return None
+    return jsonify({"error": "Password required", "auth_required": True}), 401
+
+
+@app.route("/auth/status", methods=["GET"])
+def auth_status():
+    return jsonify({
+        "required": password_required(),
+        "authenticated": is_authenticated(),
+    })
+
+
+@app.route("/auth/login", methods=["POST"])
+def auth_login():
+    if not password_required():
+        session["authenticated"] = True
+        return jsonify({"ok": True})
+
+    data = request.get_json(silent=True) or {}
+    submitted = str(data.get("password") or "")
+    if secrets.compare_digest(submitted, APP_PASSWORD):
+        session["authenticated"] = True
+        session.permanent = True
+        return jsonify({"ok": True})
+    return jsonify({"error": "Incorrect password"}), 401
+
+
 @app.route("/")
 def index():
-    return render_template("index.html", languages=DEFAULT_LANGUAGES)
+    return render_template("index.html")
 
 @app.route("/models", methods=["GET"])
 def models():

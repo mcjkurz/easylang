@@ -14,23 +14,14 @@ const savedCount = document.getElementById('savedCount');
 const savedEmpty = document.getElementById('savedEmpty');
 const clearSavedBtn = document.getElementById('clearSavedBtn');
 const modelSelect = document.getElementById('modelSelect');
+const authGate = document.getElementById('authGate');
+const appShell = document.getElementById('appShell');
+const authForm = document.getElementById('authForm');
+const authPassword = document.getElementById('authPassword');
+const authError = document.getElementById('authError');
+const authSubmit = document.getElementById('authSubmit');
 
 const DEFAULT_LANGUAGES = ["Chinese", "English", "French", "German", "Polish", "Russian"];
-const DEFAULT_MODELS = [
-    'Claude-Haiku-4.5',
-    'Claude-Opus-4.8',
-    'Claude-Sonnet-4.6',
-    'Gemini-3.1-Flash-Lite',
-    'Gemini-3.5-Flash-Lite',
-    'Gemini-3.7-Flash',
-    'GPT-5.4',
-    'GPT-5.4-Mini',
-    'GPT-5.4-Nano',
-    'Grok-4.1-Fast-Reasoning',
-    'Grok-4.6',
-    'MiMo-V2-Flash',
-];
-const DEFAULT_MODEL = 'GPT-5.4-Mini';
 const STORAGE_KEY = 'easylang_languages';
 const MODEL_STORAGE_KEY = 'easylang_model';
 const SAVED_KEY = 'easylang_saved_sentences';
@@ -40,7 +31,7 @@ const DIFFICULTY_LABELS = ['Easy', 'Medium', 'Hard', 'Advanced', 'Expert', 'Nati
 let lastQuery = '';
 
 function getStoredModel() {
-    return localStorage.getItem(MODEL_STORAGE_KEY) || DEFAULT_MODEL;
+    return localStorage.getItem(MODEL_STORAGE_KEY) || '';
 }
 
 function saveModel(model) {
@@ -48,12 +39,17 @@ function saveModel(model) {
 }
 
 function populateModelSelect(models, defaultModel) {
-    const sorted = [...new Set(models)].sort((a, b) =>
-        a.localeCompare(b, undefined, { sensitivity: 'base' })
-    );
+    // Server already returns models sorted; keep order stable
+    const list = [...new Set(models)];
+    if (!list.length) {
+        modelSelect.innerHTML = '<option value="">No models configured</option>';
+        return;
+    }
     const saved = getStoredModel();
-    const selected = sorted.includes(saved) ? saved : defaultModel;
-    modelSelect.innerHTML = sorted.map(m =>
+    const selected = list.includes(saved)
+        ? saved
+        : (list.includes(defaultModel) ? defaultModel : list[0]);
+    modelSelect.innerHTML = list.map(m =>
         `<option value="${escapeHtml(m)}"${m === selected ? ' selected' : ''}>${escapeHtml(m)}</option>`
     ).join('');
     if (selected !== saved) {
@@ -62,23 +58,21 @@ function populateModelSelect(models, defaultModel) {
 }
 
 async function initSettings() {
-    let models = DEFAULT_MODELS;
-    let defaultModel = DEFAULT_MODEL;
     try {
-        const response = await fetch('/models');
+        const response = await fetch('/models', { credentials: 'same-origin' });
         if (response.ok) {
             const data = await response.json();
-            if (Array.isArray(data.models) && data.models.length) {
-                models = data.models;
-            }
-            if (data.default) {
-                defaultModel = data.default;
-            }
+            const models = Array.isArray(data.models) ? data.models : [];
+            const defaultModel = data.default || '';
+            populateModelSelect(models, defaultModel);
+        } else if (response.status === 401) {
+            showAuthGate();
+        } else {
+            modelSelect.innerHTML = '<option value="">Could not load models</option>';
         }
     } catch (e) {
-        // Fall back to client defaults
+        modelSelect.innerHTML = '<option value="">Could not load models</option>';
     }
-    populateModelSelect(models, defaultModel);
 }
 
 function setPanelOpen(panel, btn, open) {
@@ -210,17 +204,32 @@ function saveLanguages(languages) {
 
 let languages = getStoredLanguages();
 
+function getCheckedLanguages() {
+    const boxes = document.querySelectorAll('.lang-checkbox');
+    if (!boxes.length) {
+        return new Set(languages);
+    }
+    return new Set(
+        Array.from(boxes).filter((cb) => cb.checked).map((cb) => cb.value)
+    );
+}
+
 function renderLanguages() {
+    const checked = getCheckedLanguages();
     languagesGrid.innerHTML = '';
     
     languages.forEach((lang, index) => {
+        const isChecked = checked.has(lang);
         const div = document.createElement('div');
         div.className = 'lang-item';
+        div.draggable = true;
+        div.dataset.index = String(index);
         div.innerHTML = `
-            <input type="checkbox" class="lang-checkbox" id="lang-${index}" value="${lang}" checked>
+            <input type="checkbox" class="lang-checkbox" id="lang-${index}" value="${escapeHtml(lang)}"${isChecked ? ' checked' : ''}>
             <label class="lang-label" for="lang-${index}">
-                ${lang}
-                <button type="button" class="lang-remove" data-index="${index}" title="Remove ${lang}">×</button>
+                <span class="lang-drag" title="Drag to reorder" aria-hidden="true">⋮⋮</span>
+                ${escapeHtml(lang)}
+                <button type="button" class="lang-remove" data-index="${index}" title="Remove ${escapeHtml(lang)}">×</button>
             </label>
         `;
         languagesGrid.appendChild(div);
@@ -228,6 +237,7 @@ function renderLanguages() {
 
     const addWrapper = document.createElement('div');
     addWrapper.className = 'add-lang-wrapper';
+    addWrapper.draggable = false;
     addWrapper.innerHTML = `
         <button type="button" class="add-lang-btn" id="addLangBtn">+ Add</button>
         <div class="add-lang-input-wrapper" id="addLangInputWrapper">
@@ -254,6 +264,50 @@ function attachLanguageHandlers() {
             } else {
                 alert('You need at least one language');
             }
+        });
+    });
+
+    let dragIndex = null;
+
+    document.querySelectorAll('.lang-item').forEach((item) => {
+        item.addEventListener('dragstart', (e) => {
+            if (e.target.closest('.lang-remove')) {
+                e.preventDefault();
+                return;
+            }
+            dragIndex = parseInt(item.dataset.index, 10);
+            item.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', String(dragIndex));
+        });
+
+        item.addEventListener('dragend', () => {
+            item.classList.remove('dragging');
+            document.querySelectorAll('.lang-item').forEach((el) => el.classList.remove('drag-over'));
+            dragIndex = null;
+        });
+
+        item.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            item.classList.add('drag-over');
+        });
+
+        item.addEventListener('dragleave', () => {
+            item.classList.remove('drag-over');
+        });
+
+        item.addEventListener('drop', (e) => {
+            e.preventDefault();
+            item.classList.remove('drag-over');
+            const from = dragIndex;
+            const to = parseInt(item.dataset.index, 10);
+            if (Number.isNaN(from) || Number.isNaN(to) || from === to) return;
+
+            const [moved] = languages.splice(from, 1);
+            languages.splice(to, 0, moved);
+            saveLanguages(languages);
+            renderLanguages();
         });
     });
 
@@ -333,14 +387,10 @@ function updateSavedCount() {
     clearSavedBtn.hidden = count === 0;
 }
 
-function findSaved(language, sentence) {
-    return getSavedSentences().find(
-        (item) => item.language === language && item.sentence === sentence
-    ) || null;
-}
-
 function isSaved(language, sentence) {
-    return Boolean(findSaved(language, sentence));
+    return getSavedSentences().some(
+        (item) => item.language === language && item.sentence === sentence
+    );
 }
 
 function makeId() {
@@ -433,7 +483,7 @@ function renderLangRow(lang, sentence, difficulty, siblings) {
             <span class="lang-sentence">${escapeHtml(sentence)}</span>
             <span class="row-actions">
                 <button type="button" class="icon-btn save-btn${saved ? ' saved' : ''}" data-save="${payload}" title="${saved ? 'Remove from saved' : 'Save for revision'}" aria-label="${saved ? 'Remove from saved' : 'Save for revision'}" aria-pressed="${saved ? 'true' : 'false'}">${saved ? BOOKMARK_FILLED_ICON : BOOKMARK_ICON}</button>
-                <a class="icon-btn gt-link" href="${escapeHtml(gtUrl)}" target="_blank" rel="noopener noreferrer" title="Google Translate" aria-label="Google Translate">${GT_ICON}</a>
+                <a class="icon-btn" href="${escapeHtml(gtUrl)}" target="_blank" rel="noopener noreferrer" title="Google Translate" aria-label="Google Translate">${GT_ICON}</a>
                 <button type="button" class="icon-btn explain-btn" data-lang="${escapeHtml(lang)}" data-sentence="${escapeHtml(sentence)}" title="Explain grammar" aria-label="Explain grammar">${EXPLAIN_ICON}</button>
             </span>
         </div>
@@ -587,21 +637,15 @@ function formatMarkdown(text) {
 
 function parseResults(text) {
     const difficultyPattern = DIFFICULTY_LABELS.map(l => l.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
-    const headingSplit = new RegExp(
-        `\\*\\*(?:(${difficultyPattern})|Sentence\\s*(\\d+))\\*\\*`,
-        'gi'
-    );
+    const headingSplit = new RegExp(`\\*\\*(${difficultyPattern})\\*\\*`, 'gi');
 
     const parts = text.split(headingSplit);
     let html = '';
 
-    for (let i = 1; i < parts.length; i += 3) {
-        const difficultyLabel = parts[i];
-        const sentenceNum = parts[i + 1];
-        const content = parts[i + 2] || '';
-        const title = difficultyLabel
-            ? difficultyLabel.charAt(0).toUpperCase() + difficultyLabel.slice(1).toLowerCase()
-            : `Sentence ${sentenceNum}`;
+    for (let i = 1; i < parts.length; i += 2) {
+        const rawTitle = parts[i] || '';
+        const content = parts[i + 1] || '';
+        const title = rawTitle.charAt(0).toUpperCase() + rawTitle.slice(1).toLowerCase();
 
         const langLines = content.match(/^[-•]\s*([^:]+):\s*(.+)$/gm) || [];
         const rows = [];
@@ -676,6 +720,7 @@ async function openExplainModal(sentence, lang) {
     try {
         const response = await fetch('/explain', {
             method: 'POST',
+            credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 sentence,
@@ -686,6 +731,10 @@ async function openExplainModal(sentence, lang) {
         });
         const data = await response.json();
         explainModalBody.classList.remove('loading');
+        if (handleAuthFailure(data, response.status)) {
+            closeExplainModal();
+            return;
+        }
         if (data.explanation) {
             setCachedExplanation(sentence, lang, explainIn, data.explanation);
             explainModalBody.innerHTML = formatMarkdown(data.explanation);
@@ -761,11 +810,16 @@ async function search() {
         }
         const response = await fetch('/search', {
             method: 'POST',
+            credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
 
         const data = await response.json();
+
+        if (handleAuthFailure(data, response.status)) {
+            return;
+        }
         
         if (data.error) {
             resultsContent.innerHTML = `<div class="error">${escapeHtml(data.error)}</div>`;
@@ -781,7 +835,6 @@ async function search() {
 }
 
 renderLanguages();
-initSettings();
 updateSavedCount();
 
 searchBtn.addEventListener('click', search);
@@ -791,3 +844,74 @@ phraseInput.addEventListener('keydown', (e) => {
         search();
     }
 });
+
+/* ---------- Optional password gate ---------- */
+
+function showAuthGate() {
+    authGate.hidden = false;
+    appShell.hidden = true;
+    authError.hidden = true;
+    authPassword.value = '';
+    setTimeout(() => authPassword.focus(), 0);
+}
+
+function hideAuthGate() {
+    authGate.hidden = true;
+    appShell.hidden = false;
+}
+
+async function ensureAuth() {
+    try {
+        const response = await fetch('/auth/status', { credentials: 'same-origin' });
+        const data = await response.json();
+        if (!data.required || data.authenticated) {
+            hideAuthGate();
+            return true;
+        }
+        showAuthGate();
+        return false;
+    } catch (e) {
+        hideAuthGate();
+        return true;
+    }
+}
+
+function handleAuthFailure(data, status) {
+    if (status === 401 || data?.auth_required) {
+        showAuthGate();
+        return true;
+    }
+    return false;
+}
+
+authForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    authError.hidden = true;
+    authSubmit.disabled = true;
+    try {
+        const response = await fetch('/auth/login', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: authPassword.value }),
+        });
+        const data = await response.json();
+        if (response.ok && data.ok) {
+            hideAuthGate();
+            initSettings();
+        } else {
+            authError.textContent = data.error || 'Incorrect password';
+            authError.hidden = false;
+            authPassword.select();
+        }
+    } catch (err) {
+        authError.textContent = 'Could not unlock. Try again.';
+        authError.hidden = false;
+    }
+    authSubmit.disabled = false;
+});
+
+(async () => {
+    const ok = await ensureAuth();
+    if (ok) initSettings();
+})();

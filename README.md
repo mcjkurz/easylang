@@ -38,9 +38,10 @@ API_MODELS=GPT-5.4-Nano,GPT-5.4-Mini,Claude-Sonnet-4.6,GPT-5.4
 API_DEFAULT_MODEL=GPT-5.4-Mini
 HOST=127.0.0.1
 PORT=6353
+PASSWORD=
 ```
 
-`API_MODELS` is a comma-separated list shown in Settings. `API_DEFAULT_MODEL` must be one of those IDs.
+`API_MODELS` is a comma-separated list shown in Settings. `API_DEFAULT_MODEL` must be one of those IDs. Set `PASSWORD` to require unlock before use; leave it empty for open access.
 
 Examples for `API_BASE_URL`:
 - OpenAI: `https://api.openai.com/v1`
